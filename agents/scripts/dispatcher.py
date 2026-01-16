@@ -6,12 +6,16 @@ and periodically print the last lines from the tmux pane for monitoring.
 
 from __future__ import annotations
 
-import re
 import subprocess
 import time
 import uuid
 from pathlib import Path
 from typing import Iterable
+
+try:
+    from agents.scripts import pane_parser
+except ModuleNotFoundError:
+    import pane_parser
 
 # Edit this prompt to drive the Codex CLI. It is sent after Codex starts.
 PREDEFINED_PROMPT = (
@@ -66,40 +70,6 @@ def capture_pane(target: str) -> str:
     return result.stdout
 
 
-def find_last_timer_line(lines: list[str]) -> tuple[int | None, str | None]:
-    for idx in range(len(lines) - 1, -1, -1):
-        if "Worked for " in lines[idx]:
-            return idx, lines[idx]
-    return None, None
-
-
-def find_prompt_line(lines: list[str], start_index: int) -> int | None:
-    prompt_markers = (">", "\u203a")
-    for idx in range(start_index + 1, len(lines)):
-        stripped = lines[idx].lstrip()
-        if stripped.startswith(prompt_markers):
-            return idx
-    return None
-
-
-def find_context_left(lines: list[str]) -> tuple[int | None, str | None]:
-    for idx in range(len(lines) - 1, -1, -1):
-        if "context left" in lines[idx]:
-            match = re.search(r"(\d+)%\s+context left", lines[idx])
-            if match:
-                return int(match.group(1)), lines[idx]
-    return None, None
-
-
-def extract_timer_value(timer_line: str | None) -> str | None:
-    if not timer_line:
-        return None
-    match = re.search(r"Worked for ([^ ]+)", timer_line)
-    if match:
-        return match.group(1)
-    return None
-
-
 def kill_session(session_name: str) -> None:
     run_tmux(["kill-session", "-t", session_name], check=False)
 
@@ -116,7 +86,7 @@ def main() -> None:
     session_name = f"codex_task_{uuid.uuid4().hex[:8]}"
     target = f"{session_name}:0.0"
     stable_timer_polls = 0
-    last_timer_line = None
+    last_timer_value = None
     session_created = False
 
     print(f"Starting tmux session '{session_name}' and launching Codex...")
@@ -145,9 +115,9 @@ def main() -> None:
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             print(f"\n[{timestamp}] ---- tmux pane tail ----")
             print(f"{ANSI_CYAN}{output.rstrip()}{ANSI_RESET}")
-            timer_index, timer_line = find_last_timer_line(lines)
-            timer_value = extract_timer_value(timer_line)
-            context_percent, _ = find_context_left(lines)
+            timer_index, timer_line = pane_parser.find_last_timer_line(lines)
+            timer_value = pane_parser.extract_timer_value(timer_line)
+            context_percent, _ = pane_parser.find_context_left(lines)
             timer_display = timer_value if timer_value is not None else "unknown"
             context_display = (
                 f"{context_percent}%" if context_percent is not None else "unknown"
@@ -155,22 +125,28 @@ def main() -> None:
             print(
                 f"Metrics: timer={timer_display} context_left={context_display}"
             )
-            if timer_line is None:
+            if timer_value is None:
                 stable_timer_polls = 0
-                last_timer_line = None
+                last_timer_value = None
             else:
-                if timer_line == last_timer_line:
+                if timer_value == last_timer_value:
                     stable_timer_polls += 1
                 else:
-                    last_timer_line = timer_line
+                    last_timer_value = timer_value
                     stable_timer_polls = 1
                 if stable_timer_polls >= STABLE_TIMER_POLLS:
-                    prompt_index = find_prompt_line(lines, timer_index)
-                    body_lines = lines[timer_index + 1 : prompt_index]
-                    while body_lines and not body_lines[0].strip():
-                        body_lines.pop(0)
-                    while body_lines and not body_lines[-1].strip():
-                        body_lines.pop()
+                    worked_for_index = pane_parser.find_last_worked_for_line(lines)
+                    start_index = (
+                        worked_for_index if worked_for_index is not None else timer_index
+                    )
+                    prompt_index = pane_parser.find_prompt_line(lines, start_index)
+                    include_start_line = worked_for_index is not None
+                    body_lines = pane_parser.extract_body_lines(
+                        lines,
+                        start_index,
+                        prompt_index,
+                        include_start_line=include_start_line,
+                    )
                     final_answer = "\n".join(body_lines)
                     print("\nDetected stable timer; final answer from pane:")
                     print(final_answer)
