@@ -1,4 +1,46 @@
 schema_version: 2
-current_sprint: []
+current_sprint:
+  - id: T-001
+    title: Extract pane parsing utilities with unit tests
+    dod: |
+      - Parsing helpers live in `agents/scripts/pane_parser.py` with clear docstrings.
+      - `agents/scripts/dispatcher.py` uses the shared parsing helpers.
+      - Unit tests cover timer, context, prompt, and body extraction paths.
+    verify:
+      - python -m unittest discover -s agents/tests -p 'test_pane_parser.py'
+    links:
+      scratchpad: agents/scratchpads/T-001.md
+    files:
+      - agents/scripts/dispatcher.py
+      - agents/scripts/pane_parser.py
+      - agents/tests/test_pane_parser.py
+  - id: T-002
+    title: Add log summarizer CLI for saved tmux pane logs
+    depends_on:
+      - T-001
+    dod: |
+      - New CLI script reads a pane log file and prints the final answer plus metrics.
+      - Script reuses the parsing helpers from `agents/scripts/pane_parser.py`.
+      - Unit tests validate summary output for representative log samples.
+    verify:
+      - python -m unittest discover -s agents/tests -p 'test_pane_summary.py'
+    links:
+      scratchpad: agents/scratchpads/T-002.md
+    files:
+      - agents/scripts/pane_summary.py
+      - agents/tests/test_pane_summary.py
+  - id: T-003
+    title: Make lint_tasks_state validation testable with unit coverage
+    dod: |
+      - Validation logic is factored into a reusable helper with a clear signature.
+      - CLI behavior is preserved while delegating to the new helper.
+      - Unit tests exercise valid and invalid task/state combinations.
+    verify:
+      - python -m unittest discover -s agents/tests -p 'test_lint_tasks_state.py'
+    links:
+      scratchpad: agents/scratchpads/T-003.md
+    files:
+      - agents/scripts/lint_tasks_state.py
+      - agents/tests/test_lint_tasks_state.py
 backlog: []
 exploration_candidates: []
