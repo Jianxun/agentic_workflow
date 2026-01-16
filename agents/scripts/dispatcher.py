@@ -20,7 +20,7 @@ except ModuleNotFoundError:
 # Edit this prompt to drive the Codex CLI. It is sent after Codex starts.
 PREDEFINED_PROMPT = (
     #"Summarize the current working directory structure"
-    "@agents/roles/executor.md work on the next `ready` task."
+    "@agents/roles/executor.md work on task T-003."
 )
 
 # How often to poll the tmux pane for output.
@@ -64,7 +64,7 @@ def capture_last_lines(target: str, lines: int = 10) -> str:
 
 def capture_pane(target: str) -> str:
     result = run_tmux(
-        ["capture-pane", "-t", target, "-p"],
+        ["capture-pane", "-t", target, "-p", "-S", "-"],
         check=True,
     )
     return result.stdout
