@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 PREDEFINED_PROMPT = (
     #"Summarize the current working directory structure"
     #"@agents/roles/executor.md work on task T-003."
-    "@agents/roles/reviewer.md review task T-003."
+    "@agents/roles/reviewer.md review task T-003. there are local changes on the task branch from the user, include them in the PR."
 )
 
 # How often to poll the tmux pane for output.
