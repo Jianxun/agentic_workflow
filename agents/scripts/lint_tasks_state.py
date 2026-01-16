@@ -96,9 +96,9 @@ def collect_task_ids(
 
 
 def main() -> int:
-    repo_root = Path(__file__).resolve().parents[1]
-    tasks_path = repo_root / "agents/context/tasks.yaml"
-    state_path = repo_root / "agents/context/tasks_state.yaml"
+    agents_root = Path(__file__).resolve().parents[1]
+    tasks_path = agents_root / "context" / "tasks.yaml"
+    state_path = agents_root / "context" / "tasks_state.yaml"
 
     errors: list[str] = []
 
