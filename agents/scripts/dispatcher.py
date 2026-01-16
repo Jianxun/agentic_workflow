@@ -16,7 +16,7 @@ from typing import Iterable
 # Edit this prompt to drive the Codex CLI. It is sent after Codex starts.
 PREDEFINED_PROMPT = (
     #"Summarize the current working directory structure"
-    "@agents/roles/executor.md work on task T-001."
+    "@agents/roles/executor.md work on the next `ready` task."
 )
 
 # How often to poll the tmux pane for output.
