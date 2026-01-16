@@ -82,11 +82,32 @@ def write_pane_log(target: str, session_name: str) -> Path:
     return log_path
 
 
+def render_final_answer(lines: list[str], timer_index: int | None) -> str:
+    worked_for_index = pane_parser.find_last_worked_for_line(lines)
+    if worked_for_index is not None:
+        start_index = worked_for_index
+        include_start_line = True
+    elif timer_index is not None:
+        start_index = timer_index
+        include_start_line = False
+    else:
+        return "\n".join(lines).rstrip()
+    prompt_index = pane_parser.find_prompt_line(lines, start_index)
+    body_lines = pane_parser.extract_body_lines(
+        lines,
+        start_index,
+        prompt_index,
+        include_start_line=include_start_line,
+    )
+    return "\n".join(body_lines)
+
+
 def main() -> None:
     session_name = f"codex_task_{uuid.uuid4().hex[:8]}"
     target = f"{session_name}:0.0"
     stable_timer_polls = 0
     last_timer_value = None
+    unknown_timer_polls = 0
     session_created = False
 
     print(f"Starting tmux session '{session_name}' and launching Codex...")
@@ -126,28 +147,23 @@ def main() -> None:
                 f"Metrics: timer={timer_display} context_left={context_display}"
             )
             if timer_value is None:
+                unknown_timer_polls += 1
                 stable_timer_polls = 0
                 last_timer_value = None
+                if unknown_timer_polls >= STABLE_TIMER_POLLS:
+                    final_answer = render_final_answer(lines, timer_index)
+                    print("\nDetected missing timer; final answer from pane:")
+                    print(final_answer)
+                    break
             else:
+                unknown_timer_polls = 0
                 if timer_value == last_timer_value:
                     stable_timer_polls += 1
                 else:
                     last_timer_value = timer_value
                     stable_timer_polls = 1
                 if stable_timer_polls >= STABLE_TIMER_POLLS:
-                    worked_for_index = pane_parser.find_last_worked_for_line(lines)
-                    start_index = (
-                        worked_for_index if worked_for_index is not None else timer_index
-                    )
-                    prompt_index = pane_parser.find_prompt_line(lines, start_index)
-                    include_start_line = worked_for_index is not None
-                    body_lines = pane_parser.extract_body_lines(
-                        lines,
-                        start_index,
-                        prompt_index,
-                        include_start_line=include_start_line,
-                    )
-                    final_answer = "\n".join(body_lines)
+                    final_answer = render_final_answer(lines, timer_index)
                     print("\nDetected stable timer; final answer from pane:")
                     print(final_answer)
                     break
