@@ -125,7 +125,7 @@ def main() -> None:
         session_created = True
 
         # Start Codex CLI in the pane.
-        send_keys(target, "codex")
+        send_keys(target, "codex -s danger-full-access")
         time.sleep(1)  # Give Codex a moment to start.
 
         # Send the predefined prompt (supports multi-line strings).
