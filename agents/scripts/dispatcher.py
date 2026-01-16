@@ -20,7 +20,8 @@ except ModuleNotFoundError:
 # Edit this prompt to drive the Codex CLI. It is sent after Codex starts.
 PREDEFINED_PROMPT = (
     #"Summarize the current working directory structure"
-    "@agents/roles/executor.md work on task T-003."
+    #"@agents/roles/executor.md work on task T-003."
+    "@agents/roles/reviewer.md review task T-003."
 )
 
 # How often to poll the tmux pane for output.
