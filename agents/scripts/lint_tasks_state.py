@@ -95,24 +95,14 @@ def collect_task_ids(
     return ids, dependencies
 
 
-def main() -> int:
-    agents_root = Path(__file__).resolve().parents[1]
-    tasks_path = agents_root / "context" / "tasks.yaml"
-    state_path = agents_root / "context" / "tasks_state.yaml"
-
+def validate_tasks_state(
+    tasks_data: dict,
+    state_data: dict,
+    tasks_path: Path,
+    state_path: Path,
+) -> list[str]:
+    """Return validation errors for tasks and task state payloads."""
     errors: list[str] = []
-
-    try:
-        tasks_data = load_yaml(tasks_path)
-    except Exception as exc:  # noqa: BLE001 - keep CLI output simple
-        errors.append(str(exc))
-        tasks_data = {}
-
-    try:
-        state_data = load_yaml(state_path)
-    except Exception as exc:  # noqa: BLE001 - keep CLI output simple
-        errors.append(str(exc))
-        state_data = {}
 
     if tasks_data.get("schema_version") != 2:
         errors.append(f"{tasks_path} schema_version must be 2.")
@@ -244,6 +234,30 @@ def main() -> int:
     for task_id in seen_ids:
         if task_id not in task_states:
             errors.append(f"tasks_state.yaml is missing entry for '{task_id}'.")
+
+    return errors
+
+
+def main() -> int:
+    agents_root = Path(__file__).resolve().parents[1]
+    tasks_path = agents_root / "context" / "tasks.yaml"
+    state_path = agents_root / "context" / "tasks_state.yaml"
+
+    errors: list[str] = []
+
+    try:
+        tasks_data = load_yaml(tasks_path)
+    except Exception as exc:  # noqa: BLE001 - keep CLI output simple
+        errors.append(str(exc))
+        tasks_data = {}
+
+    try:
+        state_data = load_yaml(state_path)
+    except Exception as exc:  # noqa: BLE001 - keep CLI output simple
+        errors.append(str(exc))
+        state_data = {}
+
+    errors.extend(validate_tasks_state(tasks_data, state_data, tasks_path, state_path))
 
     if errors:
         for error in errors:
