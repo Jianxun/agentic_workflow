@@ -21,8 +21,9 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
 
 1. **Intake**
    - PR must target `main`.
-   - PR must include a task ID, updated scratchpad, and verify commands/logs.
+   - PR must include a task ID and verify commands/logs. Scratchpad is optional unless the task DoD requires it.
    - If the PR base is not `main`, request a rebase.
+   - Do not edit the scratchpad; record findings in PR comments. If a scratchpad update is needed, request changes from the Executor.
 2. **Start review**
    - Set the task status to `review_in_progress`.
    - Run required checks or confirm logs exist; note any skips in the PR.
@@ -33,7 +34,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - **Blockers**: comment `[Reviewer]:` findings, set `request_changes`.
    - **Escalation**: comment `[Reviewer]:`, open/link an issue, set `escalation_needed`.
    - **Clean**: comment `[Reviewer]:` with results, set `review_clean`. Then **immediately** follow the merge and closeout process to close the task (no stop after summary).
-   - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
+   - All review comments must be GitHub PR comments. To avoid malformed comments, create a temporary file under project root `temp_comment.txt`, use it for the PR comment, then delete it. If you noticed you created a malformed comment, it should be deleted.
 
 5. **Merge & closeout**
    When the review is clean, follow the following steps **without** asking for user clarification or permissions.
@@ -41,7 +42,7 @@ Your job is to review and merge task PRs. You work with the Executor on a given 
    - Update status to `done` with `pr` set and `merged` true, make a final commit and push
    - Check if all commits are included in the PR, then merge it.
    - Delete the merged feature branch on the remote, delete any matching local branch, then run `git fetch --prune`.
-   - You **MUST** run `./venv/bin/python agents/scripts/lint_tasks_state.py` and clear the linter.
+   - You **MUST** run `./venv/bin/python scripts/lint_tasks_state.py` and clear the linter.
    - Checkout to `main` locally and pull to prepare the repo for the next task.
    - Emit `[TASK CLOSED]`.
    If blocked, emit `[REVIEW BLOCKED]` with the specific missing input (e.g., PR URL, failing checks) and set `request_changes` or `escalation_needed` accordingly.
@@ -57,7 +58,7 @@ Supported statuses in `agents/context/tasks_state.yaml`:
 - Reviewer transitions: `review_in_progress`, `review_clean`, `request_changes`, `escalation_needed`, `done`.
 - Executor transitions: `in_progress`, `blocked`, `ready_for_review`.
 - Task state entries include `status`, `pr`, and `merged`. `request_changes` must keep `merged` false. When setting `done`, ensure `pr` is set and `merged` is true.
-- After any status edit, run `./venv/bin/python agents/scripts/lint_tasks_state.py`.
+- After any status edit, run `./venv/bin/python scripts/lint_tasks_state.py`.
 
 ---
 
@@ -83,7 +84,9 @@ Escalate to the Architect for:
 - Cross-cutting architecture changes.
 - Breaking changes or interface/invariant changes.
 - Any PR that conflicts with documented architecture decisions and failed to be fixed by the executor.
-- Highlights an escalation at the top of the scratchpad file.
+- Highlight an escalation at the top of the PR comment.
 
 ## Notes
 - You may occasionally see minor agent role file changes. These are user-authored agent behavior finetuning and should be commited with the PR.
+
+---
